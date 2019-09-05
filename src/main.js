@@ -12,50 +12,58 @@ const PORT = process.env.port || '8080';
 const store = databox.NewStoreClient(DATABOX_ZMQ_ENDPOINT, DATABOX_ARBITER_ENDPOINT);
 
 //create store schema for saving key/value config data
-const helloWorldConfig = {
+const configMetadata = {
     ...databox.NewDataSourceMetadata(),
-    Description: 'hello world config',
+    Description: 'spendingalarm config',
     ContentType: 'application/json',
     Vendor: 'Databox Inc.',
-    DataSourceType: 'helloWorldConfig',
-    DataSourceID: 'helloWorldConfig',
+    DataSourceType: 'spendingalarmConfig',
+    DataSourceID: 'spendingalarmConfig',
     StoreType: 'kv',
 }
 
-//create store schema for an actuator (i.e a store that can be written to by an app)
-const helloWorldActuator = {
+//create store schema alarms
+const reportsMetadata = {
     ...databox.NewDataSourceMetadata(),
-    Description: 'hello world actuator',
+    Description: 'spendingalaram reports',
     ContentType: 'application/json',
     Vendor: 'Databox Inc.',
-    DataSourceType: 'helloWorldActuator',
-    DataSourceID: 'helloWorldActuator',
-    StoreType: 'ts',
-    IsActuator: true,
+    DataSourceType: 'spendingalarmReport',
+    DataSourceID: 'spendingalarmReport',
+    StoreType: 'ts/blob'
 }
 
+// transaction store client
+let tstore = null;
+
 ///now create our stores using our clients.
-store.RegisterDatasource(helloWorldConfig).then(() => {
-    console.log("registered helloWorldConfig");
-    //now register the actuator
-    return store.RegisterDatasource(helloWorldActuator)
-}).catch((err) => { console.log("error registering helloWorld config datasource", err) }).then(() => {
-    console.log("registered helloWorldActuator, observing", helloWorldActuator.DataSourceID);
-    store.TS.Observe(helloWorldActuator.DataSourceID, 0)
-        .catch((err) => {
-            console.log("[Actuation observing error]", err);
-        })
-        .then((eventEmitter) => {
-            if (eventEmitter) {
-                eventEmitter.on('data', (data) => {
-                    console.log("[Actuation] data received ", data);
-                });
-            }
-        })
-        .catch((err) => {
-            console.log("[Actuation error]", err);
-        });
-});
+store.RegisterDatasource(configMetadata).then(() => {
+	console.log("registered spendingalarmConfig");
+	//now register the output (reports)
+	return store.RegisterDatasource(reportsMetadata)
+}).then(() => {
+	console.log("registered spendingalarm report")
+	// no DATABOX_TESTING for now
+	if (DATABOX_TESTING) 
+		throw('DATABOX_TESTING not supported');
+	let tmetadata = databox.HypercatToSourceDataMetadata(process.env.DATASOURCE_TRANSACTIONS);
+	tstore = databox.NewStoreClient(tmetadata.getStoreUrlFromMetadata(tmetadata), ARBITER_URI);
+	return tstore.TSBlob.Observe(tmetadata.DataSourceID, 0); 
+}).then((emitter) => {
+	console.log("started listening to", tmetadata.DataSourceID);
+
+	emitter.on('data', (data) => {
+		console.log("seen data from the transactions", JSON.parse(data.data));
+	});
+
+	emitter.on('error', (err) => {
+		console.warn("from transactions observer", err);
+	});
+
+	// TODO LAST
+}).catch((err) => { 
+	console.log("error setting up datasources", err) 
+})
 
 //set up webserver to serve driver endpoints
 const app = express();

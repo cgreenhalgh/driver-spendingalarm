@@ -3,11 +3,11 @@
     "name": "driver-spendingalarm",
     "docker-registry": "databoxsystems",
     "docker-image-tag": "0.5.2",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "databox driver to report configurable spending alaram",
     "author": "Chris Greenhalgh, The University of Nottingham",
     "licence": "MIT",
-    "databox-type": "driver",
+    "databox-type": "app",
     "tags": [
     ],
     "homepage": "https://github.com/cgreenhalgh/driver-spendingalarm",
@@ -15,18 +15,32 @@
         "type": "git",
         "url": "git+https://github.com/cgreenhalgh/driver-spendingalarm.git"
     },
-    "datasources": [],
+    "datasources": [
+	{
+		"type": "truelayerUserTransactions",
+		"required": true,
+		"name": "transactions",
+		"clientid": "TRANSACTIONS",
+		"granularities": []
+	}
+    ],
     "network-permissions": [],
     "resource-requirements": {},
     "export-whitelist": [],
+    "external-whitelist": [
+	{
+		"urls": ["www.cs.nott.ac.uk","music-mrl.nott.ac.uk"],
+		"description": "servers to test against"
+	}
+    ],
     "resource-requirements": {
         "store": "core-store"
     },
     "provides": [
         {
-            "data-source-type": "helloWorldActuator",
-            "description": "hello world actuator",
-            "store-type": "kv",
+            "data-source-type": "spendingalarmReport",
+            "description": "Report from spending alarm",
+            "store-type": "ts/blob",
             "schema": {}
         }
     ]

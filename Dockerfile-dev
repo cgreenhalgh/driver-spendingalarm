@@ -13,8 +13,13 @@ RUN npm install -g nodemon
 ENV PATH /opt/node_modules/.bin:$PATH
 ENV NODE_PATH /opt/node_modules
 
-USER databox
+#USER databox
 WORKDIR /src
+
+#local dev version of lib-node-databox
+#ADD ./package.json package.json
+ADD lib-node-databox /src/lib-node-databox/
+RUN npm install -g /src/lib-node-databox
 
 LABEL databox.type="driver"
 
