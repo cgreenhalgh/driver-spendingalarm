@@ -36,7 +36,7 @@ const reportsMetadata = {
 // transaction store client
 let tstore = null;
 const tmetadata = databox.HypercatToDataSourceMetadata(process.env.DATASOURCE_TRANSACTIONS);
-const tendpoint = databox.HypercatToDataStoreUrl(process.env.DATASOURCE_TRANSACTIONS);
+const tendpoint = databox.GetStoreURLFromHypercat(process.env.DATASOURCE_TRANSACTIONS);
 console.log("transaction source metadata", tmetadata);
 console.log("transaction endpoint", tendpoint);
 
