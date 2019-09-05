@@ -35,6 +35,10 @@ const reportsMetadata = {
 
 // transaction store client
 let tstore = null;
+const tmetadata = databox.HypercatToDataSourceMetadata(process.env.DATASOURCE_TRANSACTIONS);
+const tendpoint = databox.HypercatToDataStoreUrl(process.env.DATASOURCE_TRANSACTIONS);
+console.log("transaction source metadata", tmetadata);
+console.log("transaction endpoint", tendpoint);
 
 ///now create our stores using our clients.
 store.RegisterDatasource(configMetadata).then(() => {
@@ -46,8 +50,10 @@ store.RegisterDatasource(configMetadata).then(() => {
 	// no DATABOX_TESTING for now
 	if (DATABOX_TESTING) 
 		throw('DATABOX_TESTING not supported');
-	let tmetadata = databox.HypercatToSourceDataMetadata(process.env.DATASOURCE_TRANSACTIONS);
-	tstore = databox.NewStoreClient(tmetadata.getStoreUrlFromMetadata(tmetadata), ARBITER_URI);
+	tstore = databox.NewStoreClient(tendpoint, DATABOX_ARBITER_ENDPOINT);
+	return tstore.TSBlob.Latest(tmetadata.DataSourceID);
+}).then((data) => {
+	console.log("latest transaction", data);
 	return tstore.TSBlob.Observe(tmetadata.DataSourceID, 0); 
 }).then((emitter) => {
 	console.log("started listening to", tmetadata.DataSourceID);

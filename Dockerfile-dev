@@ -17,9 +17,11 @@ ENV NODE_PATH /opt/node_modules
 WORKDIR /src
 
 #local dev version of lib-node-databox
-#ADD ./package.json package.json
-ADD lib-node-databox /src/lib-node-databox/
-RUN npm install -g /src/lib-node-databox
+ADD lib-node-databox/ /src/lib-node-databox/
+RUN npm install /src/lib-node-databox
+
+#USER databox
+WORKDIR /src
 
 LABEL databox.type="driver"
 

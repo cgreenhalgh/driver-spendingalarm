@@ -21,4 +21,5 @@ and updated [lib-node-databox docs](https://github.com/me-box/lib-node-databox)
 - found bugs in lib-node-databox 0.10.6
 - trying to fix in cgreenhalgh/lib-node-databox - clone it here... 
 (see workaround in Dockerfile-dev)
+- fixed datasource type in truelayer driver (now cgreenhalgh/driver-truelayer) as ts/blob
 
