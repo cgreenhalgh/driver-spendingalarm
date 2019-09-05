@@ -4,18 +4,12 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var databox = require("node-databox");
 
+const DATABOX_ARBITER_ENDPOINT = process.env.DATABOX_ARBITER_ENDPOINT || 'tcp://127.0.0.1:4444';
 const DATABOX_ZMQ_ENDPOINT = process.env.DATABOX_ZMQ_ENDPOINT || "tcp://127.0.0.1:5555";
 const DATABOX_TESTING = !(process.env.DATABOX_VERSION);
 const PORT = process.env.port || '8080';
 
-//create a timeseries blob client for communicating with the timeseries store
-const tsc = databox.NewTimeSeriesBlobClient(DATABOX_ZMQ_ENDPOINT, false);
-
-//create a keyvalue client for storing config
-const kvc = databox.NewKeyValueClient(DATABOX_ZMQ_ENDPOINT, false);
-
-//get the default store metadata
-const metaData = databox.NewDataSourceMetadata();
+const store = databox.NewStoreClient(DATABOX_ZMQ_ENDPOINT, DATABOX_ARBITER_ENDPOINT);
 
 //create store schema for saving key/value config data
 const helloWorldConfig = {
@@ -30,7 +24,7 @@ const helloWorldConfig = {
 
 //create store schema for an actuator (i.e a store that can be written to by an app)
 const helloWorldActuator = {
-    ...metaData,
+    ...databox.NewDataSourceMetadata(),
     Description: 'hello world actuator',
     ContentType: 'application/json',
     Vendor: 'Databox Inc.',
@@ -41,13 +35,13 @@ const helloWorldActuator = {
 }
 
 ///now create our stores using our clients.
-kvc.RegisterDatasource(helloWorldConfig).then(() => {
+store.RegisterDatasource(helloWorldConfig).then(() => {
     console.log("registered helloWorldConfig");
     //now register the actuator
-    return tsc.RegisterDatasource(helloWorldActuator)
+    return store.RegisterDatasource(helloWorldActuator)
 }).catch((err) => { console.log("error registering helloWorld config datasource", err) }).then(() => {
     console.log("registered helloWorldActuator, observing", helloWorldActuator.DataSourceID);
-    tsc.Observe(helloWorldActuator.DataSourceID, 0)
+    store.TS.Observe(helloWorldActuator.DataSourceID, 0)
         .catch((err) => {
             console.log("[Actuation observing error]", err);
         })
@@ -75,7 +69,7 @@ app.get("/", function (req, res) {
 });
 
 app.get("/ui", function (req, res) {
-    kvc.Read(helloWorldConfig.DataSourceID, "config").then((result) => {
+    store.KV.Read(helloWorldConfig.DataSourceID, "config").then((result) => {
         console.log("result:", helloWorldConfig.DataSourceID, result);
         res.render('index', { config: result.value });
     }).catch((err) => {
@@ -89,7 +83,7 @@ app.post('/ui/setConfig', (req, res) => {
     const config = req.body.config;
 
     return new Promise((resolve, reject) => {
-        kvc.Write(helloWorldConfig.DataSourceID, "config", { key: helloWorldConfig.DataSourceID, value: config }).then(() => {
+        store.KV.Write(helloWorldConfig.DataSourceID, "config", { key: helloWorldConfig.DataSourceID, value: config }).then(() => {
             console.log("successfully written!", config);
             resolve();
         }).catch((err) => {
@@ -111,6 +105,6 @@ if (DATABOX_TESTING) {
     http.createServer(app).listen(PORT);
 } else {
     console.log("[Creating https server]", PORT);
-    const credentials = databox.getHttpsCredentials();
+    const credentials = databox.GetHttpsCredentials();
     https.createServer(credentials, app).listen(PORT);
 }
