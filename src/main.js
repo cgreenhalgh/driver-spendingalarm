@@ -17,8 +17,8 @@ const configMetadata = {
     Description: 'spendingalarm config',
     ContentType: 'application/json',
     Vendor: 'Databox Inc.',
-    DataSourceType: 'spendingalarmConfig',
-    DataSourceID: 'spendingalarmConfig',
+    DataSourceType: 'spendingalarmDriverConfig',
+    DataSourceID: 'spendingalarmDriverConfig',
     StoreType: 'kv',
 }
 
@@ -28,13 +28,11 @@ const reportsMetadata = {
     Description: 'spendingalaram reports',
     ContentType: 'application/json',
     Vendor: 'Databox Inc.',
-    DataSourceType: 'spendingalarmReport',
-    DataSourceID: 'spendingalarmReport',
-    StoreType: 'ts/blob'
+    DataSourceType: 'spendingalarmReports',
+    DataSourceID: 'spendingalarmReports',
+    StoreType: 'ts/blob',
+    IsActuator: true
 }
-
-// transaction store client
-let tstore = null;
 
 ///now create our stores using our clients.
 store.RegisterDatasource(configMetadata).then(() => {
@@ -46,21 +44,19 @@ store.RegisterDatasource(configMetadata).then(() => {
 	// no DATABOX_TESTING for now
 	if (DATABOX_TESTING) 
 		throw('DATABOX_TESTING not supported');
-	let tmetadata = databox.HypercatToSourceDataMetadata(process.env.DATASOURCE_TRANSACTIONS);
-	tstore = databox.NewStoreClient(tmetadata.getStoreUrlFromMetadata(tmetadata), ARBITER_URI);
-	return tstore.TSBlob.Observe(tmetadata.DataSourceID, 0); 
+	return tstore.TSBlob.Observe(reportsMetadata.DataSourceID, 0); 
 }).then((emitter) => {
-	console.log("started listening to", tmetadata.DataSourceID);
+	console.log("started listening to ", reportsMetadata.DataSourceID);
 
 	emitter.on('data', (data) => {
-		console.log("seen data from the transactions", JSON.parse(data.data));
+		console.log("new report:", data);
+		// TODO write ....
 	});
 
 	emitter.on('error', (err) => {
-		console.warn("from transactions observer", err);
+		console.warn("error (reports observer)", err);
 	});
 
-	// TODO LAST
 }).catch((err) => { 
 	console.log("error setting up datasources", err) 
 })
@@ -77,8 +73,8 @@ app.get("/", function (req, res) {
 });
 
 app.get("/ui", function (req, res) {
-    store.KV.Read(helloWorldConfig.DataSourceID, "config").then((result) => {
-        console.log("result:", helloWorldConfig.DataSourceID, result);
+    store.KV.Read(configMetadata.DataSourceID, "config").then((result) => {
+        console.log("ui get config:", configMetadata.DataSourceID, result);
         res.render('index', { config: result.value });
     }).catch((err) => {
         console.log("get config error", err);
@@ -91,11 +87,11 @@ app.post('/ui/setConfig', (req, res) => {
     const config = req.body.config;
 
     return new Promise((resolve, reject) => {
-        store.KV.Write(helloWorldConfig.DataSourceID, "config", { key: helloWorldConfig.DataSourceID, value: config }).then(() => {
-            console.log("successfully written!", config);
+        store.KV.Write(configMetadata.DataSourceID, "config", { value: config }).then(() => {
+            console.log("config successfully written!", config);
             resolve();
         }).catch((err) => {
-            console.log("failed to write", err);
+            console.log("failed to write config", err);
             reject(err);
         });
     }).then(() => {

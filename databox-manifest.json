@@ -1,13 +1,11 @@
 {
     "manifest-version": 1,
     "name": "driver-spendingalarm",
-    "docker-registry": "databoxsystems",
-    "docker-image-tag": "0.5.2",
-    "version": "0.2.0",
-    "description": "databox driver to report configurable spending alaram",
+    "version": "0.2.1",
+    "description": "databox driver to support app-spendingalarm, report alerts",
     "author": "Chris Greenhalgh, The University of Nottingham",
     "licence": "MIT",
-    "databox-type": "app",
+    "databox-type": "driver",
     "tags": [
     ],
     "homepage": "https://github.com/cgreenhalgh/driver-spendingalarm",
@@ -15,15 +13,7 @@
         "type": "git",
         "url": "git+https://github.com/cgreenhalgh/driver-spendingalarm.git"
     },
-    "datasources": [
-	{
-		"type": "truelayerUserTransactions",
-		"required": true,
-		"name": "transactions",
-		"clientid": "TRANSACTIONS",
-		"granularities": []
-	}
-    ],
+    "datasources": [],
     "network-permissions": [],
     "resource-requirements": {},
     "export-whitelist": [],
@@ -38,7 +28,7 @@
     },
     "provides": [
         {
-            "data-source-type": "spendingalarmReport",
+            "data-source-type": "spendingalarmReports",
             "description": "Report from spending alarm",
             "store-type": "ts/blob",
             "schema": {}
